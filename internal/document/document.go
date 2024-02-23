@@ -22,9 +22,10 @@ type Options struct {
 	CheckBusyDomainZones []string
 	SkipBusyDomains      bool
 	SortRecords          bool
+	SortRecordsByLength  bool
 }
 
-type recordsSlice map[string][]string
+type RecordsSlice map[string][]string
 
 func Process(opts *Options) error {
 	entries, err := os.ReadDir(opts.DirInPath)
@@ -64,7 +65,7 @@ func processFile(opts *Options) error {
 	recordsHash := getRecordsHash(records)
 
 	if opts.SortRecords {
-		records = sortRecords(records)
+		records = sortRecords(records, opts.SortRecordsByLength)
 	}
 
 	if opts.CheckBusyDomains {
@@ -86,12 +87,12 @@ func processFile(opts *Options) error {
 	return nil
 }
 
-func getRecordsHash(records recordsSlice) [sha256.Size]byte {
+func getRecordsHash(records RecordsSlice) [sha256.Size]byte {
 	return sha256.Sum256([]byte(fmt.Sprintln(records)))
 }
 
-func getRecords(rows []string) recordsSlice {
-	records := make(recordsSlice)
+func getRecords(rows []string) RecordsSlice {
+	records := make(RecordsSlice)
 	group := ""
 
 	for _, row := range rows {
@@ -111,7 +112,7 @@ func getRecords(rows []string) recordsSlice {
 	return records
 }
 
-func filterRecordsByDnsZones(records recordsSlice, zones []string, skip bool) recordsSlice {
+func filterRecordsByDnsZones(records RecordsSlice, zones []string, skip bool) RecordsSlice {
 	for g, rec := range records {
 		var recs []string
 
@@ -139,14 +140,18 @@ func filterRecordsByDnsZones(records recordsSlice, zones []string, skip bool) re
 	return records
 }
 
-func sortRecords(records recordsSlice) recordsSlice {
+func sortRecords(records RecordsSlice, sortByLen bool) RecordsSlice {
 	for _, rec := range records {
-		sort.Sort(srt.Domain(rec))
+		if sortByLen {
+			sort.Sort(srt.DomainLengthSort(rec))
+		} else {
+			sort.Strings(rec)
+		}
 	}
 	return records
 }
 
-func prepareRowsToSave(rows []string, records recordsSlice) []string {
+func prepareRowsToSave(rows []string, records RecordsSlice) []string {
 	var newRows []string
 
 	for _, row := range rows {

@@ -15,6 +15,7 @@ func main() {
 	checkBusyDomainZones := flag.String("zones", "com", "Check busy domain zones (separated by commas)")
 	skipBusyDomains := flag.Bool("skip", true, "Skip busy domains")
 	sortRecords := flag.Bool("sort", true, "Sort records")
+	sortRecordsByLength := flag.Bool("sort-len", true, "Sort records by length")
 	flag.Parse()
 
 	opts := &document.Options{
@@ -24,6 +25,7 @@ func main() {
 		SkipBusyDomains:      *skipBusyDomains,
 		CheckBusyDomainZones: strings.Split(*checkBusyDomainZones, ","),
 		SortRecords:          *sortRecords,
+		SortRecordsByLength:  *sortRecordsByLength,
 	}
 
 	err := document.Process(opts)
